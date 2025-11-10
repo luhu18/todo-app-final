@@ -1,0 +1,320 @@
+// Function parameters are arranged to match the call from App.js
+export const createNewTask = (taskList,taskText,itemsLeft,updateUI, applyFilter,savedTasks,isLoadCompleted) => {
+    
+    if(!taskText || taskText.trim() === ""){
+        alert("Please Enter a valid task")
+        return;
+    }
+
+    const taskItem = document.createElement("li")
+    let currentFilter = "active"
+
+    // If the task is being loaded as 'completed', apply the class/filter immediately
+    if(isLoadCompleted === true){
+        taskItem.classList.add("completed");
+        currentFilter = "completed"
+    }
+
+    taskItem.setAttribute("data-filter", currentFilter);
+    taskItem.setAttribute("data-visible", "true");
+    taskItem.classList.add("task-item")
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox"
+    // Handle both boolean true and the string "true" from local storage load
+    checkbox.checked = isLoadCompleted === true || isLoadCompleted === "true"
+    checkbox.classList.add("checkbox-input");
+
+    const deleteBtn = document.createElement("button")
+    deleteBtn.classList.add("delete-btn")
+    deleteBtn.innerText = "X" // Simple X for deletion
+
+    const createTaskElement = document.createElement("span");
+    createTaskElement.classList.add("task-text")
+    createTaskElement.innerText = taskText
+
+    taskItem.addEventListener("dragstart", (event) => {
+        event.dataTransfer.clearData()
+        event.dataTransfer.setData("text/plain", taskText);
+        taskItem.classList.add("dragging");
+    })
+
+    taskItem.addEventListener("dragend", ()=>{
+        taskItem.classList.remove("dragging")
+    })
+
+    taskItem.addEventListener("dragover", (event)=>{
+        event.preventDefault()
+        taskItem.classList.add("drag-over")
+    })
+    taskItem.addEventListener("dragleave", () => {
+        taskItem.classList.remove("drag-over")
+    })
+    taskItem.addEventListener("drop", (event) =>{
+        event.stopPropagation();
+        taskItem.classList.remove("drag-over")
+    })
+
+    // Checkbox Change Listener
+    checkbox.addEventListener("change", function (){
+        if(this.checked){
+            taskItem.classList.add("completed");
+            taskItem.setAttribute("data-filter", "completed");
+        }else{
+            taskItem.classList.remove("completed")
+            taskItem.setAttribute("data-filter", "active")
+        }
+
+        // Re-apply the current filter to hide/show the task immediately
+        const activeFilterBtn = document.querySelector(".filter-tab.active").getAttribute("data-filter");
+        applyFilter(activeFilterBtn)
+
+        updateUI(taskList,itemsLeft)
+        savedTasks(taskList)
+    })
+
+    // Delete Button Listener
+    deleteBtn.addEventListener("click", function () {
+        // Fix: Use the taskItem element directly from the closure scope
+        taskItem.remove() 
+        updateUI(taskList, itemsLeft)
+        savedTasks(taskList)
+    })
+
+    // Append all elements to the main task item
+    taskItem.appendChild(checkbox)
+    taskItem.appendChild(createTaskElement)
+    taskItem.appendChild(deleteBtn);
+    
+    // Add the new task to the top of the list
+    taskList.prepend(taskItem)
+}
+
+//###########################################################################
+
+export const toggleButton = document.getElementById("toggle-theme");
+export const newTaskInput = document.getElementById("new-task-input");
+export const taskList = document.getElementById("task-list");
+export const itemsLeft = document.getElementById("items-left");
+export const clearCompletd = document.getElementById("clear-completed");
+export const filterBtn = document.querySelectorAll(".filter-tab");
+
+// Updates the item count and the placeholder text visibility
+export const updateUI = (taskList, itemsLeft) => {
+    const currentTask = taskList.querySelectorAll(".task-item")
+    let count = currentTask.length;
+
+    // Pluralization Fix: "item" vs. "items"
+    const itemWord = count === 1 ? "item" : "items";
+    itemsLeft.innerText = `${count} ${itemWord} left`;
+
+    const placeHolder = taskList.querySelector(".placeholder");
+
+    // Show placeholder only when there are no tasks
+    placeHolder.style.display = count === 0 ? "block" : "none";
+}
+
+// Applies the current filter value to all tasks
+export const applyFilter  = (filterValue) => {
+
+    const currentTask = document.querySelectorAll(".task-item")
+    currentTask.forEach(task => {
+
+        const taskStatus = task.getAttribute("data-filter")
+        // Show task if filter is 'all' OR if task's status matches the filter
+        let shouldShow = (filterValue === "all" || taskStatus === filterValue)
+
+        task.setAttribute("data-visible", shouldShow ? "true" : "false")
+
+    })
+
+}
+
+// ################################# App.js ##################
+import { savedTasks, loadsTasks } from "./localStorage.js";
+import { toggleButton, newTaskInput, taskList,itemsLeft,clearCompletd,filterBtn, applyFilter,updateUI } from "./dom.js";
+
+import { createNewTask } from "./tasks.js";
+
+// This function acts as a wrapper to correctly pass all DOM/utility dependencies 
+// to the decoupled task creation function.
+const createTaskWithDependcies = (taskText, isLoadedCompleted = false) => {
+    createNewTask(
+      taskList,           
+      taskText,           
+      itemsLeft,          
+      updateUI,           
+      applyFilter,        
+      savedTasks,        
+      isLoadedCompleted
+    )
+};
+
+// In App.js (new code)
+
+const saveAndRefresh = () => {
+    updateUI(taskList, itemsLeft);
+    savedTasks(taskList);
+};
+
+
+const initializeApp = () =>{
+    // 1. Load tasks from localStorage, using the wrapper function to create the DOM elements
+    loadsTasks(createTaskWithDependcies)
+    // 2. Update the counter and placeholder visibility
+    updateUI(taskList, itemsLeft)
+    // 3. Apply the initial filter (default is 'all')
+    const initialfilter = document.querySelector(".filter-tab.active")?.getAttribute("data-filter") || "all";
+    applyFilter(initialfilter)
+
+}
+
+
+// --- Event Listeners ---
+
+// Filter buttons handler
+filterBtn.forEach(button => {
+    button.addEventListener("click", function(e){
+        // Remove 'active' class from current active button
+        const currentActiveBtn = document.querySelector(".filter-tab.active")
+        if(currentActiveBtn){
+            currentActiveBtn.classList.remove("active")
+        }
+        // Add 'active' class to the clicked button
+        e.target.classList.add("active");
+
+        // Apply the filter
+        const activeFilterBtn = e.target.getAttribute("data-filter");
+        applyFilter(activeFilterBtn)
+        
+    })
+})
+
+// Clear Completed button handler
+const clearCompletdTasks = () => {
+    const task = taskList.querySelectorAll(".task-item.completed")
+    task.forEach(item =>{
+        item.remove()
+    })
+    
+    updateUI(taskList, itemsLeft)
+    savedTasks(taskList)
+}
+
+clearCompletd.addEventListener("click", clearCompletdTasks)
+
+// New Task input handler (on Enter keypress)
+newTaskInput.addEventListener("keypress", function(e){
+    if(e.key === "Enter"){
+        createTaskWithDependcies(newTaskInput.value);
+        newTaskInput.value = "";
+
+       saveAndRefresh()
+    }
+})
+
+//################### Drag and Drop ################
+
+const getDragAfterElement = (container, y) => {
+    const draggableElement = [...container.querySelectorAll(".task-item:not(.dragging)")];
+
+    return draggableElement.reduce((closest, child) =>{
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height /2;
+
+        if(offset < 0 && offset > closest.offset){
+            return {offset: offset, element: child}
+        }else{
+            return closest;
+        }
+    }, {offset: -Infinity}).element
+}
+
+taskList.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    const afterElement = getDragAfterElement(taskList, event.clientY)
+    const draggable = document.querySelector(".dragging")
+
+    taskList.querySelectorAll(".task-item.drag-over").forEach((item) => {
+       item.classList.add(".drag-over")
+    })
+
+    if(afterElement === null){
+        taskList.appendChild(draggable)
+    }else{
+        taskList.insertBefore(afterElement,draggable)
+        taskList.classList.remove(".drag-over")
+    }
+})
+
+taskList.addEventListener("drop", (event) =>{
+    const activeFilterBtn = document.querySelector(".filter-tab.active").getAttribute("data-filter")
+    saveAndRefresh()
+    applyFilter(activeFilterBtn)
+})
+
+// Theme toggle button handler
+toggleButton.addEventListener("click", function(){
+    const body = document.body;
+    body.classList.toggle("dark-theme");
+    const isDark = body.classList.contains("dark-theme");
+    // Save theme preference to local storage
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+    // Update ARIA attribute
+    toggleButton.setAttribute("aria-pressed", String(isDark));
+})
+
+// --- Critical Initialization Block ---
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Apply saved theme preference on page load
+    // FIX: Checking for "dark" key, which matches the value saved above
+    if(localStorage.getItem("theme") === "dark"){ 
+        document.body.classList.add("dark-theme");
+        toggleButton.setAttribute("aria-pressed", "true");
+    }
+    
+    // 2. ALWAYS initialize the app regardless of theme (Load tasks, update count, apply filters)
+    initializeApp(); 
+})
+
+
+//#########################################################
+
+import { taskList } from "./dom.js"; // Import taskList needed for saving
+
+// Saves the current tasks list to local storage
+export const savedTasks = (taskList) =>{
+    let task = [];
+    const currentTask = taskList.querySelectorAll(".task-item");
+
+    currentTask.forEach(item =>{
+        const text = item.querySelector(".task-text").innerText;
+        // The status attribute holds the current filter state (active/completed)
+        const status = item.getAttribute("data-filter") 
+        const isComplete = item.classList.contains("completed")
+
+        task.push({
+            status: status,
+            text: text,
+            isComplete: isComplete
+        })
+    })
+    const jsonString = JSON.stringify(task)
+    localStorage.setItem("tasks", jsonString) // Using "tasks" as the key
+}
+
+// Loads tasks from local storage and calls the provided function (createNewTask) to re-render them
+export const loadsTasks = (createNewTask) => {
+    const jsonString = localStorage.getItem("tasks");
+    if(jsonString){
+        const savedTask = JSON.parse(jsonString)
+        savedTask.forEach(taskData =>{
+            // Call the dependency-injected task creation function with saved data
+            createNewTask(taskData.text, taskData.isComplete)
+        })
+    }
+}
+
+
+
+

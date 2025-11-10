@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- displays site properly based on user's device -->
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./images/favicon-32x32.png"
+    />
+    <link rel="stylesheet" href="./main.css" />
+
+    <title>Frontend Mentor | Todo app</title>
+
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>TODO</h1>
+      <button class="toggle-theme" id="toggle-theme" aria-label="Toggle light/dark theme" aria-pressed="false">
+        <img src="./images/icon-moon.svg" alt="moon" />
+      </button>
+    </header>
+    <main class="app-main-content">
+      <div class="input-card">
+        <input
+          type="text"
+          id="new-task-input"
+          class="create-new-task-input"
+          placeholder="Create a new todo"
+        />
+      </div>
+      <div class="task-manager-card">
+        <ul class="task-list" id="task-list">
+          <p class="placeholder">Please press Enter to save task</p>
+        </ul>
+
+        <div class="task-manager-footer">
+          <span id="items-left">items left</span>
+          <section class="filter-section">
+            <button class="filter-tab active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="active">Active</button>
+            <button class="filter-tab" data-filter="completed">
+              Completed
+            </button>
+          </section>
+
+          <button id="clear-completed">Clear Completed</button>
+        </div>
+      </div>
+      <p class="drag">Drag and drop the render list</p>
+    </main>
+    <div class="todo-footer"></div>
+
+    <script defer src="dist/bundle.js"></script>
+  </body>
+</html>

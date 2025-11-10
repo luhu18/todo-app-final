@@ -88,8 +88,11 @@ const getDragAfterElement = (container, y) => {
 taskList.addEventListener('dragover', e => {
     e.preventDefault();
 
+
     const afterElement = getDragAfterElement(taskList, e.clientY);
     const draggable = document.querySelector('.dragging');
+
+    if(!draggable) return;
 
     taskList.querySelectorAll('.task-item.drag-over').forEach(item => {
         item.classList.add('drag-over');

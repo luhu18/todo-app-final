@@ -5,15 +5,18 @@
   "description": "",
   "main": "App.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-   "build": "webpack"
+    "test": "jest",
+    "build": "webpack",
+    "start": "webpack serve"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@swc/jest": "^0.2.39",
     "eslint": "^9.39.1",
     "eslint-plugin-import": "^2.32.0",
+    "jest": "^30.2.0",
     "webpack": "^5.102.1",
     "webpack-cli": "^6.0.1"
   }
